@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEE Profile Picture Frame | S.Y. 2026–2027</title>
+<style>
+:root{--navy:#173f4a;--teal:#dff7f8;--ink:#17333b;--gold:#d6a24b}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#eaf8fa,#f8f2e8);color:var(--ink)}
+header{padding:28px 16px 18px;text-align:center;background:var(--navy);color:#fff}
+header h1{margin:0;font-size:clamp(1.4rem,4vw,2.2rem);letter-spacing:.03em}
+header p{margin:8px 0 0;color:#d7f4f5}
+main{max-width:1000px;margin:24px auto;padding:0 16px 36px}
+.panel{background:white;border-radius:18px;padding:20px;box-shadow:0 8px 28px #173f4a18}
+.steps{font-size:.95rem;line-height:1.55;color:#52666b;margin:0 0 16px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:24px;align-items:start}
+.preview-wrap{max-width:520px;width:100%;margin:auto}
+canvas{display:block;width:100%;height:auto;border-radius:12px;background:#f7f7f7;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.controls{display:flex;flex-direction:column;gap:15px}
+label{display:block;font-weight:700;font-size:.95rem;margin-bottom:7px}
+select,input[type=file]{width:100%;padding:11px;border:1px solid #b9cdd0;border-radius:10px;background:#fff;color:var(--ink);font:inherit}
+input[type=range]{width:100%;accent-color:var(--navy)}
+.hint{font-size:.83rem;color:#61777b;margin-top:6px;line-height:1.4}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:12px 15px;font-weight:700;font-size:.95rem;cursor:pointer}
+.primary{background:var(--navy);color:#fff;flex:1}
+.secondary{background:var(--teal);color:var(--navy)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.note{font-size:.82rem;line-height:1.5;color:#607276;margin:16px 0 0}
+footer{text-align:center;font-size:.8rem;color:#607276;padding:0 16px 25px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.controls{order:-1}.preview-wrap{max-width:440px}.panel{padding:15px}main{margin-top:15px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SEE PROFILE PICTURE FRAME</h1>
+  <p>Society of English Educators · School Year 2026–2027</p>
+</header>
+<main>
+  <section class="panel">
+    <p class="steps"><strong>Make your SEE profile picture:</strong> Choose your year level, upload a photo, then drag the photo inside the frame and adjust the zoom. When you are happy with the preview, download your profile picture.</p>
+    <div class="layout">
+      <div class="preview-wrap"><canvas id="canvas" width="2000" height="2000" aria-label="Profile picture preview"></canvas></div>
+      <div class="controls">
+        <div>
+          <label for="year">1. Choose your year level</label>
+          <select id="year">
+            <option value="frame-freshman.png">1st Year — Freshman</option>
+            <option value="frame-sophomore.png">2nd Year — Sophomore</option>
+            <option value="frame-junior.png">3rd Year — Junior</option>
+            <option value="frame-senior.png">4th Year — Senior</option>
+          </select>
+        </div>
+        <div>
+          <label for="photo">2. Upload your photo</label>
+          <input id="photo" type="file" accept="image/*">
+          <div class="hint">For best results, use a clear photo. Your photo stays in your browser and is not sent to this website.</div>
+        </div>
+        <div>
+          <label for="zoom">3. Adjust zoom</label>
+          <input id="zoom" type="range" min="0.1" max="3" value="1" step="0.01">
+          <div class="hint">Move the slider all the way left to make your photo much smaller, or right to enlarge it. Drag the photo to reposition it. The photo can be reduced to 10% of its starting size.</div>
+        </div>
+        <div class="btnrow">
+          <button id="reset" class="secondary" type="button">Reset photo position</button>
+          <button id="download" class="primary" type="button" disabled>Download PNG</button>
+        </div>
+        <p class="note">Tip: Check that your face fits comfortably inside the circular opening before downloading. Your selected year-level design will be included in the final image.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>Made for the SEE community · S.Y. 2026–2027</footer>
+<script>
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const year=document.getElementById('year'), photoInput=document.getElementById('photo'), zoomInput=document.getElementById('zoom');
+const downloadBtn=document.getElementById('download'), resetBtn=document.getElementById('reset');
+const frames={};
+['frame-freshman.png','frame-sophomore.png','frame-junior.png','frame-senior.png'].forEach(src=>{
+  const im=new Image(); im.src=src; im.onload=()=>{frames[src]=im; draw();};
+});
+let photo=null, zoom=1, offsetX=0, offsetY=0, dragging=false, lastX=0, lastY=0;
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(photo){
+    const scale=Math.max(canvas.width/photo.width,canvas.height/photo.height)*zoom;
+    const w=photo.width*scale,h=photo.height*scale;
+    const x=(canvas.width-w)/2+offsetX, y=(canvas.height-h)/2+offsetY;
+    ctx.drawImage(photo,x,y,w,h);
+  }
+  const frame=frames[year.value];
+  if(frame) ctx.drawImage(frame,0,0,canvas.width,canvas.height);
+}
+year.addEventListener('change',draw);
+photoInput.addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0]; if(!file)return;
+  if(!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
+  const url=URL.createObjectURL(file), im=new Image();
+  im.onload=()=>{photo=im;zoom=1;offsetX=0;offsetY=0;zoomInput.value='1';downloadBtn.disabled=false;draw();URL.revokeObjectURL(url);};
+  im.onerror=()=>{alert('Sorry, this photo could not be opened. Try another image.');URL.revokeObjectURL(url);};
+  im.src=url;
+});
+zoomInput.addEventListener('input',()=>{zoom=Number(zoomInput.value);draw();});
+resetBtn.addEventListener('click',()=>{zoom=1;offsetX=0;offsetY=0;zoomInput.value='1';draw();});
+function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
+canvas.addEventListener('pointerdown',e=>{if(!photo)return;dragging=true;canvas.setPointerCapture(e.pointerId);const p=point(e);lastX=p.x;lastY=p.y;});
+canvas.addEventListener('pointermove',e=>{if(!dragging)return;const p=point(e);offsetX+=p.x-lastX;offsetY+=p.y-lastY;lastX=p.x;lastY=p.y;draw();});
+canvas.addEventListener('pointerup',()=>dragging=false);
+canvas.addEventListener('pointercancel',()=>dragging=false);
+downloadBtn.addEventListener('click',()=>{
+  if(!photo)return;
+  draw();
+  canvas.toBlob(blob=>{
+    if(!blob){alert('Could not create the image. Please try again.');return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    const label=year.options[year.selectedIndex].text.split(' — ')[0].replace(' ','-');
+    a.download='SEE-'+label+'-Profile-Picture.png';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  },'image/png');
+});
+draw();
+</script>
+</body>
+</html>
